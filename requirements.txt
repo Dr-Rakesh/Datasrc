@@ -1,0 +1,15 @@
+beautifulsoup4
+fastapi
+fpdf
+pydantic
+requests
+selenium
+webdriver-manager
+yt-dlp
+uvicorn
+jinja2
+PyPDF2
+urllib3
+pandas
+pymupdf
+gnupg

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intuitive.Cloud Web Extractor</title>
+    <!-- Ensure the path to the favicon is correct -->
+    <link rel="icon" type="image/png" href="/static/logo.jpg">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        .logo {
+            width: 300px;
+            margin-bottom: -20px;
+        }
+        .input-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .input-container input {
+            width: 500px;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 25px 0 0 25px;
+            border-top-right-radius: 25px; /* Add rounding to the top-right corner */
+            border-bottom-right-radius: 25px; /* Add rounding to the bottom-right corner */
+        }
+        .input-container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #27379b;
+            color: white;
+            border-radius: 0 25px 25px 0;
+            cursor: pointer;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        .button-container button {
+            margin: 0 5px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #27379b;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        /* Spinner Styles */
+        .spinner {
+            border: 16px solid #f3f3f3;
+            border-top: 16px solid #27379b;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-top: -60px;
+            margin-left: -60px;
+        }
+        .loading-message {
+            position: fixed;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/Logo.jpg" alt="Intuitive.Cloud Logo" class="logo">
+        <div class="input-container">
+            <input type="text" id="urls" placeholder="Type your URL here">
+        </div>
+        <div class="button-container">
+            <button onclick="sendWeb2PDF()">PDF Generator</button>
+            <button onclick="sendWeb2Text()">Text Generator</button>
+            <button onclick="sendAll2PDF()">All dependency Generator (Takes Time)</button> <!-- New button for All2PDF -->
+        </div>
+    </div>
+    <!-- Spinner -->
+    <div id="spinner" class="spinner" style="display: none;"></div>
+    <div id="loading-message" class="loading-message" style="display: none;">
+        <p id="exact-time" style="display: none;">Please wait...</p>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('loading-message').style.display = 'block';
+            document.getElementById('exact-time').textContent = `Please Wait...`;
+            document.getElementById('exact-time').style.display = 'block';
+        }
+
+        function hideSpinner() {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('loading-message').style.display = 'none';
+        }
+
+        function sendRequest(endpoint) {
+            const urls = document.getElementById('urls').value.split(';').map(url => url.trim());
+
+            showSpinner();
+
+            return fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ urls: urls }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const exactTime = response.headers.get('X-Processing-Time');
+                document.getElementById('exact-time').textContent = `Exact time: ${exactTime} seconds`;
+                return response.blob().then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    const filename = response.headers.get('content-disposition').split('filename=')[1].replace(/"/g, '');
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                });
+            });
+        }
+
+        function sendWeb2PDF() {
+            sendRequest('/web2pdf').then(() => hideSpinner()).catch(error => {
+                console.error('Error:', error);
+                hideSpinner();
+            });
+        }
+
+        function sendWeb2Text() {
+            sendRequest('/web2text').then(() => hideSpinner()).catch(error => {
+                console.error('Error:', error);
+                hideSpinner();
+            });
+        }
+
+        function sendAll2PDF() {  // New function for All2PDF
+            sendRequest('/all2pdf').then(() => hideSpinner()).catch(error => {
+                console.error('Error:', error);
+                hideSpinner();
+            });
+        }
+    </script>
+</body>
+</html>
